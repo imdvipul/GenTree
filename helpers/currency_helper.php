@@ -1,0 +1,1 @@
+<?php function formatCurrency($a){return '₹'.number_format($a,2);}

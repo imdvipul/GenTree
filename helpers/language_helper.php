@@ -1,0 +1,1 @@
+<?php function msg($k){$m=['login'=>'Login success'];return $m[$k]??'';}

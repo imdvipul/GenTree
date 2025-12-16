@@ -1,0 +1,1 @@
+<?php function formatNumber($n){return number_format($n);}

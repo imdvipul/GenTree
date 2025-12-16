@@ -1,0 +1,1 @@
+<?php function cleanString($s){return htmlspecialchars(trim($s));}
