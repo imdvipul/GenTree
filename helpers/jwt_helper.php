@@ -1,53 +1,54 @@
 <?php
 
-define('JWT_SECRET', 'SUPER_SECRET_KEY_CHANGE_THIS');
-define('JWT_EXPIRY', 3600); // 1 hour
-
-function base64UrlEncode($data) {
-    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
-}
-
-function base64UrlDecode($data) {
-    return base64_decode(strtr($data, '-_', '+/'));
-}
-
-function generateJWT($payload) {
-    $header = ['alg' => 'HS256', 'typ' => 'JWT'];
+function generateJWT(array $payload, int $expireHours = 24): string {
+    $header = base64_encode(json_encode([
+        "alg" => "HS256",
+        "typ" => "JWT"
+    ]));
 
     $payload['iat'] = time();
-    $payload['exp'] = time() + JWT_EXPIRY;
+    $payload['exp'] = time() + (3600 * $expireHours);
 
-    $base64Header  = base64UrlEncode(json_encode($header));
-    $base64Payload = base64UrlEncode(json_encode($payload));
+    $payloadEncoded = base64_encode(json_encode($payload));
+
+    $secret = "GENTREE_SUPER_SECRET_KEY"; // 🔐 move to env in prod
 
     $signature = hash_hmac(
         'sha256',
-        $base64Header . "." . $base64Payload,
-        JWT_SECRET,
+        "$header.$payloadEncoded",
+        $secret,
         true
     );
 
-    $base64Signature = base64UrlEncode($signature);
-
-    return $base64Header . "." . $base64Payload . "." . $base64Signature;
+    return "$header.$payloadEncoded." . base64_encode($signature);
 }
 
-function verifyJWT($token) {
+function verifyJWT(string $token): ?array {
     $parts = explode('.', $token);
+    if (count($parts) !== 3) {
+        return null;
+    }
 
-    if (count($parts) !== 3) return false;
+    [$headerEncoded, $payloadEncoded, $signatureEncoded] = $parts;
 
-    [$header, $payload, $signature] = $parts;
+    $secret = "GENTREE_SUPER_SECRET_KEY"; // 🔐 move to env in prod
 
-    $validSignature = base64UrlEncode(
-        hash_hmac('sha256', "$header.$payload", JWT_SECRET, true)
+    $expectedSignature = hash_hmac(
+        'sha256',
+        "$headerEncoded.$payloadEncoded",
+        $secret,
+        true
     );
 
-    if (!hash_equals($validSignature, $signature)) return false;
+    if (!hash_equals(base64_decode($signatureEncoded), $expectedSignature)) {
+        return null;
+    }
 
-    $payloadData = json_decode(base64UrlDecode($payload), true);
+    $payload = json_decode(base64_decode($payloadEncoded), true);
 
-    if ($payloadData['exp'] < time()) return false;
+    if ($payload['exp'] < time()) {
+        return null;
+    }
 
-    return $payloadData;
+    return $payload;
 }

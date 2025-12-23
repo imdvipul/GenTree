@@ -1,2 +1,10 @@
 <?php
-function response($s,$m,$d=null){echo json_encode(["status"=>$s,"message"=>$m,"data"=>$d]);exit;}
+
+function response(bool $status, string $message, $data = null) {
+    echo json_encode([
+        "status" => $status,
+        "message" => $message,
+        "data" => $data
+    ]);
+    exit;
+}
