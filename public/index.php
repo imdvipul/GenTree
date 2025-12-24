@@ -25,8 +25,8 @@ $routes = [
     'POST family/delete'   => '../Controllers/family/delete.php',
 
     // FAMILY MEMBERS
-    'GET members/list'  => '../Controllers/members/list.php',
-    'POST members/create'  => '../Controllers/members/create.php',
+    'POST members/list'  => '../Controllers/members/list.php',
+    'POST members/create' => __DIR__ . '/../Controllers/members/create.php',
     'POST members/update' => '../Controllers/members/update.php',
     'POST members/delete' => '../Controllers/members/delete.php',
 
