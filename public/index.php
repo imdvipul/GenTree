@@ -23,12 +23,15 @@ $routes = [
     'POST family/update' => '../Controllers/family/update.php',
     'GET family/list'   => '../Controllers/family/list.php',
     'POST family/delete'   => '../Controllers/family/delete.php',
+    'POST family/tree_by_family' => '../Controllers/family/tree_by_family.php',
 
     // FAMILY MEMBERS
     'POST members/list'  => '../Controllers/members/list.php',
     'POST members/create' => __DIR__ . '/../Controllers/members/create.php',
     'POST members/update' => '../Controllers/members/update.php',
     'POST members/delete' => '../Controllers/members/delete.php',
+    'POST members/detail' => '../Controllers/members/detail.php',
+    'POST members/relationship_list' => '../Controllers/members/relationship_list.php',
 
     // THOUGHTFUL
     'POST thoughtful/create' => '../Controllers/thoughtful/create.php',
@@ -36,6 +39,13 @@ $routes = [
     'POST thoughtful/update'   => '../Controllers/thoughtful/update.php',
     'POST thoughtful/toggle_like'        => '../Controllers/thoughtful/toggle_like.php',
     'POST thoughtful/upload'   => '../Controllers/thoughtful/upload.php',
+
+    // LIFE EVENTS
+    'POST events/create' => '../Controllers/events/create.php',
+    'POST events/update' => '../Controllers/events/update.php',
+    'POST events/delete' => '../Controllers/events/delete.php',
+    'POST events/list'   => '../Controllers/events/list.php',
+    'POST events/upload_image' => '../Controllers/events/upload_image.php',
 ];
 
 // Create route key

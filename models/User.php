@@ -7,7 +7,7 @@ class User {
         $this->db = $pdo;
     }
 
-    // 🔍 Find user for login
+    // 🔍 Find user by email
     public function findByEmail(string $email)
     {
         $stmt = $this->db->prepare("
@@ -21,15 +21,15 @@ class User {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // 🧑 Create user with family_id
+    // ✅ CREATE USER (family_id nullable)
     public function create(
         string $name,
         string $email,
         string $password,
-        int $family_id,
+        ?int $family_id = null,
         string $provider = 'email',
         ?string $providerId = null
-    ) {
+    ): bool {
         $stmt = $this->db->prepare("
             INSERT INTO users
             (name, email, password, family_id, provider, provider_id)
@@ -41,7 +41,7 @@ class User {
             'name'        => $name,
             'email'       => $email,
             'password'    => $password,
-            'family_id'   => $family_id,
+            'family_id'   => $family_id, // ✅ can be NULL
             'provider'    => $provider,
             'provider_id' => $providerId
         ]);

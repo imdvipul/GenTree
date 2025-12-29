@@ -7,13 +7,15 @@ require_once __DIR__ . "/../../models/User.php";
 
 $input = json_decode(file_get_contents("php://input"), true);
 
-$name      = trim($input['name'] ?? '');
-$email     = trim($input['email'] ?? '');
-$password  = $input['password'] ?? '';
-$family_id = $input['family_id'] ?? null; // optional
+$name     = trim($input['name'] ?? '');
+$email    = trim($input['email'] ?? '');
+$password = $input['password'] ?? '';
+$familyId = isset($input['family_id']) && $input['family_id'] !== ''
+    ? (int)$input['family_id']
+    : null;
 
 if (!$name || !$email || !$password) {
-    response(false, "All fields required");
+    response(false, "All fields are required");
 }
 
 $userModel = new User($pdo);
@@ -24,12 +26,15 @@ if ($userModel->findByEmail($email)) {
 
 $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
-// ✅ Create user with family_id
-$userModel->create(
+$created = $userModel->create(
     $name,
     $email,
     $hashedPassword,
-    $family_id
+    $familyId
 );
+
+if (!$created) {
+    response(false, "Failed to register user");
+}
 
 response(true, "Registered successfully");
