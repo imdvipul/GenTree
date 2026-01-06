@@ -36,7 +36,7 @@ try {
         (
             SELECT COUNT(*)
             FROM life_events le
-            JOIN family_members fm3 ON fm3.id = le.member_id
+            JOIN family_members fm3 ON fm3.id = le.member_id AND le.iddelete = 0
             JOIN user_member_links uml3 ON uml3.member_id = fm3.id
             WHERE uml3.family_id = f.id
         ) AS events_count
