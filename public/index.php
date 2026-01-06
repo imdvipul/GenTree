@@ -24,6 +24,9 @@ $routes = [
     'GET family/list'   => '../Controllers/family/list.php',
     'POST family/delete'   => '../Controllers/family/delete.php',
     'POST family/tree_by_family' => '../Controllers/family/tree_by_family.php',
+    'POST family/share' => '../Controllers/family/share.php',
+    'POST family/accept-invite' => '../Controllers/family/accept-invite.php',
+    'POST family/create-invite' => '../Controllers/family/create-invite.php',
 
     // FAMILY MEMBERS
     'POST members/list'  => '../Controllers/members/list.php',
@@ -32,6 +35,9 @@ $routes = [
     'POST members/delete' => '../Controllers/members/delete.php',
     'POST members/detail' => '../Controllers/members/detail.php',
     'POST members/relationship_list' => '../Controllers/members/relationship_list.php',
+    'GET members/listforfamilycreate' => '../Controllers/members/listforfamilycreate.php',
+    'POST members/addtofamily' => '../Controllers/members/addtofamily.php',
+    'POST members/removefromfamily' => '../Controllers/members/removefromfamily.php',
 
     // THOUGHTFUL
     'POST thoughtful/create' => '../Controllers/thoughtful/create.php',
@@ -45,7 +51,11 @@ $routes = [
     'POST events/update' => '../Controllers/events/update.php',
     'POST events/delete' => '../Controllers/events/delete.php',
     'POST events/list'   => '../Controllers/events/list.php',
+    'POST events/detail'   => '../Controllers/events/detail.php',
     'POST events/upload_image' => '../Controllers/events/upload_image.php',
+
+    // NOTIFICATION
+    'GET notifications/list'   => '../Controllers/notifications/list.php',
 ];
 
 // Create route key

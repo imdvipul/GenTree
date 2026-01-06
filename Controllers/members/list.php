@@ -25,12 +25,26 @@ $offset = ($page - 1) * $limit;
 
 /* ================= FIND DEFAULT VIEWPOINT (ONCE) ================= */
 $viewerId = null;
-$stmt = $pdo->prepare("SELECT id FROM family_members WHERE family_id = ? AND is_default_viewpoint = 1 AND iddelete = 0 LIMIT 1");
-$stmt->execute([$familyId]);
-$viewerResult = $stmt->fetchColumn();
-if ($viewerResult) {
-    $viewerId = (int)$viewerResult;
-}
+// Get viewer's member ID via user_member_links
+$viewerId = null;
+
+$stmt = $pdo->prepare("
+    SELECT member_id
+    FROM user_member_links
+    WHERE user_id = ? AND family_id = ?
+    LIMIT 1
+");
+$stmt->execute([$user['id'], $familyId]);
+
+$viewerId = $stmt->fetchColumn();
+$viewerId = $viewerId ? (int)$viewerId : null;
+
+// $stmt = $pdo->prepare("SELECT id FROM family_members WHERE family_id = ? AND is_default_viewpoint = 1 AND iddelete = 0 LIMIT 1");
+// $stmt->execute([$familyId]);
+// $viewerResult = $stmt->fetchColumn();
+// if ($viewerResult) {
+//     $viewerId = (int)$viewerResult;
+// }
 
 /* ================= SORT MAP ================= */
 $sortMap = [
@@ -64,7 +78,6 @@ SELECT
     fm.nickname,
     fm.gender,
     fm.birth_date,
-    fm.is_default_viewpoint,
 
     -- Self (relative to default viewpoint)
     CASE WHEN fm.id = ? THEN 1 ELSE 0 END AS is_self,
@@ -86,7 +99,8 @@ SELECT
     ) AS kids_count
 
 FROM family_members fm
-WHERE fm.family_id = ?
+JOIN user_member_links uml ON uml.member_id = fm.id
+WHERE uml.family_id = ?
   AND fm.iddelete = 0
   $whereSearch
 ORDER BY $orderBy $sortOrder
@@ -157,16 +171,16 @@ function getDirectRelation($pdo, $familyId, $viewerId, $memberId) {
     if ($type == 'parent' || $type == 'child') {
         if ($isViewerParent) {
             // Viewer is parent → Member is child
-            return $memberGender === 'female' ? 'Daughter' : 'Son';
+             return $memberGender === 'female' ? '👩‍👧 Daughter' : '👦 Son';
         } elseif ($isViewerChild) {
             // Viewer is child → Member is parent
-            return $memberGender === 'female' ? 'Mother' : 'Father';
+            return $memberGender === 'female' ? '👩 Mother' : '👨 Father';
         }
     }
 
     // SPOUSE LOGIC (always member gender)
     if ($type == 'spouse') {
-        return $memberGender === 'female' ? 'Wife' : 'Husband';
+        return $memberGender === 'female' ? '💍 Wife' : '💍 Husband';
     }
 
     return null;
@@ -181,7 +195,7 @@ function getGrandRelation($pdo, $familyId, $viewerId, $memberId) {
         foreach ($grandparents as $gpId) {
             if ($gpId == $memberId) {
                 $gender = getGender($pdo, $memberId);
-                return $gender === 'female' ? 'Grandmother' : 'Grandfather';
+                return $gender === 'female' ? '👵 Grandmother' : '👴 Grandfather';
             }
         }
     }
@@ -193,7 +207,7 @@ function getGrandRelation($pdo, $familyId, $viewerId, $memberId) {
         foreach ($grandchildren as $gcId) {
             if ($gcId == $memberId) {
                 $gender = getGender($pdo, $memberId);
-                return $gender === 'female' ? 'Granddaughter' : 'Grandson';
+                return $gender === 'female' ? '👧‍ Granddaughter' : '👦‍ Grandson';
             }
         }
     }
@@ -211,7 +225,7 @@ function areSiblings($pdo, $familyId, $viewerId, $memberId) {
 
 function getSiblingLabel($pdo, $familyId, $memberId) {
     $gender = getGender($pdo, $memberId);
-    return $gender === 'female' ? 'Sister' : 'Brother';
+    return $gender === 'female' ? '👭 Sister' : '👬 Brother';
 }
 
 /* ================= EXTENDED FAMILY ================= */
@@ -226,7 +240,16 @@ function getExtendedRelation($pdo, $familyId, $viewerId, $memberId) {
             if ((int)$siblingId === (int)$memberId) {
                 $gender = getGender($pdo, $memberId);
                 error_log("FOUND AUNT/UNCLE: $memberId gender=$gender");
-                return $gender === 'female' ? 'Aunt' : 'Uncle';
+                return $gender === 'female' ? '👩 Aunt' : '👨 Uncle';
+            }
+        }
+
+        // Uncle/Aunt-in-law
+        foreach ($parentSiblings as $uncleAuntId) {
+            $uncleAuntSpouse = getSpouse($pdo, $familyId, $uncleAuntId);
+            if ((int)$uncleAuntSpouse === (int)$memberId) {
+                $gender = getGender($pdo, $memberId);
+                return $gender === 'female' ? '👩‍❤️‍👨 Aunt-in-law' : '👨‍❤️‍👩 Uncle-in-law';
             }
         }
         
@@ -234,7 +257,7 @@ function getExtendedRelation($pdo, $familyId, $viewerId, $memberId) {
         foreach ($parentSiblings as $siblingId) {
             $cousins = getChildren($pdo, $familyId, $siblingId);
             if (in_array((int)$memberId, $cousins)) {
-                return "Cousin";
+                return "👫 Cousin";
             }
         }
     }
@@ -252,13 +275,13 @@ function getInLawRelation($pdo, $familyId, $viewerId, $memberId) {
         $spouseParents = getParents($pdo, $familyId, $viewerSpouse);
         if (in_array((int)$memberId, $spouseParents)) {
             $gender = getGender($pdo, $memberId);
-            return $gender === 'female' ? 'Mother-in-law' : 'Father-in-law';
+            return $gender === 'female' ? '👵 Mother-in-law' : '👴 Father-in-law';
         }
         
         $spouseSiblings = getSiblingsOfPerson($pdo, $familyId, $viewerSpouse);
         if (in_array((int)$memberId, $spouseSiblings)) {
             $gender = getGender($pdo, $memberId);
-            return $gender === 'female' ? 'Sister-in-law' : 'Brother-in-law';
+            return $gender === 'female' ? '👭 Sister-in-law' : '👬 Brother-in-law';
         }
     }
     
@@ -268,7 +291,7 @@ function getInLawRelation($pdo, $familyId, $viewerId, $memberId) {
         $siblingSpouse = getSpouse($pdo, $familyId, $siblingId);
         if ((int)$siblingSpouse === (int)$memberId) {
             $gender = getGender($pdo, $memberId);
-            return $gender === 'female' ? 'Sister-in-law' : 'Brother-in-law';
+            return $gender === 'female' ? '👭 Sister-in-law' : '👬 Brother-in-law';
         }
     }
     
@@ -282,7 +305,7 @@ function getInLawRelation($pdo, $familyId, $viewerId, $memberId) {
                 $cousinSpouse = getSpouse($pdo, $familyId, $cousinId);
                 if ((int)$cousinSpouse === (int)$memberId) {
                     $gender = getGender($pdo, $memberId);
-                    return $gender === 'female' ? 'Cousin-in-law' : 'Cousin-in-law';
+                    return $gender === 'female' ? '👫‍ Cousin-in-law' : '👫‍ Cousin-in-law';
                 }
             }
         }
@@ -353,9 +376,10 @@ foreach ($members as $m) {
     $name = trim($m['first_name'] . " " . $m['last_name']);
 
     $age = "N/A";
-    if ($m['birth_date']) {
-        $age = floor((time() - strtotime($m['birth_date'])) / 31556926) . " yrs";
-    }
+    // if ($m['birth_date']) {
+    //     $age = floor((time() - strtotime($m['birth_date'])) / 31556926) . " yrs";
+    // }
+    $age = calculateAge($m['birth_date']);
 
     $data[] = [
         "id"            => (int)$m['id'],
@@ -367,15 +391,44 @@ foreach ($members as $m) {
         "kidsCount"     => (int)$m['kids_count'],
         "gender"    => $m['gender'],
         "storiesCount"  => 0,
-        "isDefaultViewpoint" => (bool)$m['is_default_viewpoint']
+        "isDefaultViewpoint" => ($viewerId === (int)$m['id'])
     ];
 }
+
+function calculateAge($birthDate) {
+    if (!$birthDate) return "N/A";
+    
+    $birth = new DateTime($birthDate);
+    $today = new DateTime();
+    
+    $interval = $today->diff($birth);
+    
+    $years = $interval->y;
+    $months = $interval->m;
+    $days = $interval->d;
+    
+    $ageStr = '';
+    
+    if ($years > 0) {
+        $ageStr .= $years . 'y ~';
+    }
+    if ($months > 0) {
+        $ageStr .= ($ageStr ? ' ' : '') . $months . 'm ~';
+    }
+    if ($days > 0 || ($years === 0 && $months === 0)) {
+        $ageStr .= ($ageStr ? ' ' : '') . $days . 'd';
+    }
+    
+    return $ageStr ?: '0d';
+}
+
 
 /* ================= TOTAL COUNT ================= */
 $countSql = "
 SELECT COUNT(*)
 FROM family_members fm
-WHERE fm.family_id = ?
+JOIN user_member_links uml ON uml.member_id = fm.id
+WHERE uml.family_id = ?
   AND fm.iddelete = 0
   $whereSearch
 ";

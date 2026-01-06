@@ -1,49 +1,70 @@
 <?php
 
-class User {
-    private PDO $db;
+class User
+{
+    private $pdo;
 
-    public function __construct(PDO $pdo) {
-        $this->db = $pdo;
+    public function __construct($pdo)
+    {
+        $this->pdo = $pdo;
     }
 
-    // 🔍 Find user by email
-    public function findByEmail(string $email)
+    public function findByEmail($email)
     {
-        $stmt = $this->db->prepare("
-            SELECT id, name, email, password, role, family_id
-            FROM users
-            WHERE email = ?
-            AND isdelete = 0
-            LIMIT 1
-        ");
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ? LIMIT 1");
         $stmt->execute([$email]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // ✅ CREATE USER (family_id nullable)
-    public function create(
-        string $name,
-        string $email,
-        string $password,
-        ?int $family_id = null,
-        string $provider = 'email',
-        ?string $providerId = null
-    ): bool {
-        $stmt = $this->db->prepare("
-            INSERT INTO users
-            (name, email, password, family_id, provider, provider_id)
-            VALUES
-            (:name, :email, :password, :family_id, :provider, :provider_id)
-        ");
+    public function create(array $data)
+    {
+        $sql = "
+            INSERT INTO users (
+                first_name,
+                last_name,
+                email,
+                password,
+                phone_number,
+                role,
+                family_id,
+                provider,
+                provider_id
+            ) VALUES (
+                :first_name,
+                :last_name,
+                :email,
+                :password,
+                :phone_number,
+                'member',
+                :family_id,
+                :provider,
+                :provider_id
+            )
+        ";
+
+        $stmt = $this->pdo->prepare($sql);
 
         return $stmt->execute([
-            'name'        => $name,
-            'email'       => $email,
-            'password'    => $password,
-            'family_id'   => $family_id, // ✅ can be NULL
-            'provider'    => $provider,
-            'provider_id' => $providerId
+            ':first_name'   => $data['first_name'],
+            ':last_name'    => $data['last_name'],
+            ':email'        => $data['email'],
+            ':password'     => $data['password'],
+            ':phone_number' => $data['phone_number'],
+            ':family_id'    => $data['family_id'],
+            ':provider'     => $data['provider'],
+            ':provider_id'  => $data['provider_id'],
         ]);
     }
+
+    public function updateFamily($userId, $familyId)
+{
+    $stmt = $this->pdo->prepare("
+        UPDATE users 
+        SET family_id = ? 
+        WHERE id = ?
+    ");
+
+    return $stmt->execute([$familyId, $userId]);
+}
+
 }

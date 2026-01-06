@@ -6,6 +6,7 @@ class FamilyMember {
     public function __construct(PDO $pdo) {
         $this->pdo = $pdo;
     }
+    
 
     public function create(array $data): bool {
         $sql = "INSERT INTO family_members 
@@ -42,5 +43,38 @@ class FamilyMember {
         );
         $stmt->execute([$familyId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function findByEmail($email)
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT * FROM family_members 
+            WHERE email = ? 
+            LIMIT 1
+        ");
+        $stmt->execute([$email]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function findByUserId($userId)
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT * FROM family_members 
+            WHERE user_id = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$userId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+
+    public function attachUser($memberId, $userId)
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE family_members 
+            SET user_id = ?
+            WHERE id = ?
+        ");
+        return $stmt->execute([$userId, $memberId]);
     }
 }

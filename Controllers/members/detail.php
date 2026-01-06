@@ -1,4 +1,8 @@
 <?php
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+error_reporting(E_ALL);
+
 header("Content-Type: application/json");
 
 require_once __DIR__ . "/../../config/database.php";
@@ -74,10 +78,12 @@ $spouseStmt = $pdo->prepare("
 $spouseStmt->execute([$memberId, $memberId, $memberId]);
 $spouse = $spouseStmt->fetch(PDO::FETCH_ASSOC);
 
+$isowner = $member['user_id'] == $user["id"] ? true : false;
+
 /* ================= RESPONSE ================= */
 response(true, "Member detail fetched successfully", [
     "id" => (int)$member['id'],
-    "family_id" => (int)$member['family_id'],
+    // "family_id" => (int)$member['family_id'],
     "first_name" => $member['first_name'],
     "last_name" => $member['last_name'],
     "nickname" => $member['nickname'],
@@ -86,6 +92,7 @@ response(true, "Member detail fetched successfully", [
     "bio" => $member['bio'],
     "avatar" => $member['avatar'],
     "is_default_viewpoint" => (int)$member['is_default_viewpoint'],
+    "isowner" => $isowner,
 
     "parents" => $parents,
     "children" => $children,
