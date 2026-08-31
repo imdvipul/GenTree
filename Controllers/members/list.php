@@ -78,6 +78,7 @@ SELECT
     fm.nickname,
     fm.gender,
     fm.birth_date,
+    fm.avatar_url,
 
     -- Self (relative to default viewpoint)
     CASE WHEN fm.id = ? THEN 1 ELSE 0 END AS is_self,
@@ -390,6 +391,7 @@ foreach ($members as $m) {
         "isMarried"     => (bool)$m['is_married'],
         "kidsCount"     => (int)$m['kids_count'],
         "gender"    => $m['gender'],
+        "avatar_url" => $m['avatar_url'],
         "storiesCount"  => 0,
         "isDefaultViewpoint" => ($viewerId === (int)$m['id'])
     ];

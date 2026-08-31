@@ -93,7 +93,7 @@ response(true, "Member detail fetched successfully", [
     "avatar" => $member['avatar'],
     "is_default_viewpoint" => (int)$member['is_default_viewpoint'],
     "isowner" => $isowner,
-
+    "avatar_url" => $member['avatar_url'],
     "parents" => $parents,
     "children" => $children,
     "spouse" => $spouse ?: null

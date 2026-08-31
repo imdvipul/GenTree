@@ -93,7 +93,7 @@ SELECT
     e.created_at,
     fm.id AS creator_id,
     CONCAT(fm.first_name, ' ', fm.last_name) AS creator_name,
-    fm.avatar AS creator_avatar
+    fm.avatar_url AS creator_avatar
 FROM life_events e
 LEFT JOIN family_members fm ON fm.id = e.member_id
 $where
@@ -133,7 +133,7 @@ if ($eventIds) {
 $membersByEvent = [];
 if ($eventIds) {
     $stmt = $pdo->prepare("
-        SELECT lem.event_id, fm.id, CONCAT(fm.first_name,' ',fm.last_name) AS name, fm.avatar
+        SELECT lem.event_id, fm.id, CONCAT(fm.first_name,' ',fm.last_name) AS name, fm.avatar_url AS avatar
         FROM life_event_members lem
         JOIN family_members fm ON fm.id = lem.member_id
         WHERE lem.event_id IN ($in)

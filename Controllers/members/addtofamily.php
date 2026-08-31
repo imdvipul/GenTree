@@ -29,7 +29,7 @@ $stmt = $pdo->prepare("
 $stmt->execute([$familyId, $user['id']]);
 $role = $stmt->fetchColumn();
 
-if (!in_array($role, ['owner', 'admin'])) {
+if (!in_array($role, ['owner', 'editor'])) {
     response(false, "Not allowed", null, 403);
 }
 

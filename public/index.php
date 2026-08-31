@@ -1,5 +1,11 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 header("Content-Type: application/json");
+date_default_timezone_set('Asia/Kolkata');
+
 
 // Get requested path
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -14,9 +20,12 @@ $routes = [
     // AUTH
     'POST auth/login'    => '../Controllers/auth/login.php',
     'POST auth/register' => '../Controllers/auth/register.php',
+    'POST auth/google'   => '../Controllers/auth/google.php',
 
     // USER
     'GET user/profile'   => '../Controllers/user/profile.php',
+    'POST user/save_fcm'        => '../Controllers/user/save_fcm.php',
+    'POST user/update_profile'  => '../Controllers/user/update_profile.php',
 
     // FAMILY
     'POST family/create' => '../Controllers/family/create.php',
@@ -38,6 +47,7 @@ $routes = [
     'GET members/listforfamilycreate' => '../Controllers/members/listforfamilycreate.php',
     'POST members/addtofamily' => '../Controllers/members/addtofamily.php',
     'POST members/removefromfamily' => '../Controllers/members/removefromfamily.php',
+    'POST members/upload-avatar' => '../Controllers/members/upload-avatar.php',
 
     // THOUGHTFUL
     'POST thoughtful/create' => '../Controllers/thoughtful/create.php',
@@ -56,7 +66,28 @@ $routes = [
 
     // NOTIFICATION
     'GET notifications/list'   => '../Controllers/notifications/list.php',
+
+    // Chat
+    'GET Chat/get_contacts'   => '../Controllers/Chat/get_contacts.php',
+    'POST Chat/create_or_get'   => '../Controllers/Chat/create_or_get.php',
+    'GET Chat/list'   => '../Controllers/Chat/list.php',
+
+    // SOCIETY notice board and suvichar
+    'GET society/suvichar'       => '../Controllers/society/daily_suvichar.php',
+    'GET society/notices'        => '../Controllers/society/notices_list.php',
+    'GET society/notices/detail' => '../Controllers/society/notice_detail.php',
+
+    // SMART DOCUMENT INTELLIGENCE
+    'POST documents/upload'   => '../Controllers/documents/upload.php',
+    'POST documents/analyze'  => '../Controllers/documents/analyze.php',
+    'POST documents/save'     => '../Controllers/documents/save.php',
+    'GET documents/list'      => '../Controllers/documents/list.php',
+    'GET documents/detail'    => '../Controllers/documents/detail.php',
+    'POST documents/delete'   => '../Controllers/documents/delete.php',
+    'POST documents/reminder' => '../Controllers/documents/reminders.php',
 ];
+
+
 
 // Create route key
 $routeKey = $method . ' ' . $uri;

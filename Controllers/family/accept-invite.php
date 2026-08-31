@@ -4,6 +4,7 @@ header("Content-Type: application/json");
 require_once __DIR__ . "/../../config/database.php";
 require_once __DIR__ . "/../../helpers/response.php";
 require_once __DIR__ . "/../../helpers/auth_helper.php";
+require_once __DIR__ . "/../../helpers/fcm_helper.php";
 
 $user = getAuthUser();
 
@@ -46,7 +47,6 @@ if ($stmt->fetch()) {
 $pdo->beginTransaction();
 
 try {
-
     /* ---------------- 1️⃣ FAMILY MEMBERSHIP ---------------- */
     $stmt = $pdo->prepare("
         INSERT INTO family_memberships (family_id, user_id, role, status)
@@ -102,6 +102,29 @@ try {
 
     $pdo->commit();
 
+    /* ---------------- 5️⃣ SEND PUSH TO INVITER ---------------- */
+    $stmt = $pdo->prepare("
+        SELECT id, first_name, fcm_token
+        FROM users
+        WHERE id = ?
+    ");
+    $stmt->execute([$invite['created_by']]);
+    $inviter = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($inviter && !empty($inviter['fcm_token'])) {
+        $name = $user['first_name'] ?? 'Someone';
+
+        sendPushNotification(
+            $inviter['fcm_token'],
+            "Invitation accepted",
+            "$name accepted your family invitation",
+            [
+                "type" => "invite_accepted",
+                "family_id" => (string)$invite['family_id']
+            ]
+        );
+    }
+
     response(true, "Successfully joined the family", [
         "family_id" => (int)$invite['family_id'],
         "member_id" => (int)$memberId
@@ -113,78 +136,3 @@ try {
         "error" => $e->getMessage()
     ], 500);
 }
-
-
-
-
-
-
-// header("Content-Type: application/json");
-
-// require_once __DIR__ . "/../../config/database.php";
-// require_once __DIR__ . "/../../helpers/response.php";
-// require_once __DIR__ . "/../../helpers/auth_helper.php";
-
-// $user = getAuthUser();
-
-// if (!$user || !$user['id']) {
-//     response(false, "Unauthorized", null, 401);
-// }
-
-// $input = json_decode(file_get_contents("php://input"), true);
-// $token = $input['token'] ?? null;
-
-// if (!$token) {
-//     response(false, "Invite token required");
-// }
-
-// // Fetch invite
-// $stmt = $pdo->prepare("
-//     SELECT * FROM family_invites
-//     WHERE token = ?
-//     AND (expires_at IS NULL OR expires_at > NOW())
-//     LIMIT 1
-// ");
-// $stmt->execute([$token]);
-// $invite = $stmt->fetch(PDO::FETCH_ASSOC);
-
-// if (!$invite) {
-//     response(false, "Invalid or expired invite");
-// }
-
-// // Prevent joining twice
-// $check = $pdo->prepare("
-//     SELECT id FROM family_members WHERE user_id = ?
-// ");
-// $check->execute([$user['id']]);
-// if ($check->fetch()) {
-//     response(false, "You are already part of a family");
-// }
-
-// // Create family member
-// $stmt = $pdo->prepare("
-//     INSERT INTO family_members (family_id, user_id)
-//     VALUES (?, ?)
-// ");
-// $stmt->execute([
-//     $invite['family_id'],
-//     $user['id']
-// ]);
-
-// // Update user family_id
-// $pdo->prepare("
-//     UPDATE users SET family_id = ? WHERE id = ?
-// ")->execute([
-//     $invite['family_id'],
-//     $user['id']
-// ]);
-
-// // Mark notification as read (if exists)
-// $pdo->prepare("
-//     UPDATE notifications
-//     SET is_read = 1
-//     WHERE user_id = ?
-//     AND type = 'family_invite'
-// ")->execute([$user['id']]);
-
-// response(true, "Successfully joined the family");

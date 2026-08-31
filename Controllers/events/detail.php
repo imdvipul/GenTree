@@ -35,7 +35,7 @@ $stmt = $pdo->prepare("
 
         fm.id AS creator_id,
         CONCAT(fm.first_name, ' ', fm.last_name) AS creator_name,
-        fm.avatar AS creator_avatar
+        fm.avatar_url AS creator_avatar
 
     FROM life_events e
     LEFT JOIN family_members fm ON fm.id = e.member_id
@@ -122,7 +122,7 @@ if ($event['audience_type'] === 'members') {
         SELECT
             fm.id,
             CONCAT(fm.first_name, ' ', fm.last_name) AS name,
-            fm.avatar
+            fm.avatar_url AS avatar
         FROM life_event_members lem
         JOIN family_members fm ON fm.id = lem.member_id
         WHERE lem.event_id = ?

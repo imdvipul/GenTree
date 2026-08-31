@@ -8,6 +8,8 @@ require_once __DIR__ . "/../../helpers/auth_helper.php";
 require_once __DIR__ . "/../../models/User.php";
 require_once __DIR__ . "/../../models/Notification.php";
 
+require_once __DIR__ . "/../../helpers/fcm_helper.php";
+
 $user = getAuthUser();
 
 if (!$user || !$user['id']) {
@@ -88,6 +90,20 @@ $userModel = new User($pdo);
 $notificationModel = new Notification($pdo);
 
 $invitedUser = $userModel->findByEmail($email);
+
+if ($invitedUser && !empty($invitedUser['fcm_token'])) {
+
+    sendPushNotification(
+        $invitedUser['fcm_token'],
+        "Family Invitation",
+        "You were invited to join \"{$family['name']}\"",
+        [
+            "type" => "family_invite",
+            "token" => $token,
+            "familyId" => (string)$familyId
+        ]
+    );
+}
 
 if ($invitedUser) {
     $notificationModel->create(

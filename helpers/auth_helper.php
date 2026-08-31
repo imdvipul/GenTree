@@ -45,7 +45,7 @@ function getAuthUser()
     global $pdo;
 
     $stmt = $pdo->prepare("
-        SELECT id, first_name, last_name, email, role, family_id
+        SELECT id, first_name, last_name, email, role, family_id, society_id, building, wing, floor, unit_number
         FROM users
         WHERE id = ? AND isdelete = 0
         LIMIT 1
@@ -59,14 +59,20 @@ function getAuthUser()
     }
 
     return [
-        'id'         => (int)$user['id'],
-        'first_name' => $user['first_name'],
-        'last_name'  => $user['last_name'],
-        'email'      => $user['email'],
-        'family_id'  => $user['family_id'],
-        'role'       => $user['role'],
+        'id'          => (int)$user['id'],
+        'first_name'  => $user['first_name'],
+        'last_name'   => $user['last_name'],
+        'email'       => $user['email'],
+        'family_id'   => $user['family_id'],
+        'role'        => $user['role'],
+        'society_id'  => $user['society_id'] !== null ? (int)$user['society_id'] : null,
+        'building'    => $user['building'],
+        'wing'        => $user['wing'],
+        'floor'       => $user['floor'],
+        'unit_number' => $user['unit_number'],
     ];
 }
+
 
 
 

@@ -94,6 +94,76 @@ try {
         insertRelation($pdo, $familyId, $spouse, $memberId, 'spouse');
     }
 
+    /* ---------- SYNC BIRTHDAY LIFE EVENT ---------- */
+    $firstName = trim($input['first_name'] ?? '');
+    $birthDate = $input['birth_date'] ?? null;
+
+    if (!$birthDate) {
+        // Soft delete birthday event if date is cleared
+        $stmt = $pdo->prepare("
+            UPDATE life_events 
+            SET iddelete = 1 
+            WHERE member_id = ? AND emoji = '🎂'
+        ");
+        $stmt->execute([$memberId]);
+    } else {
+        // Check if birthday event already exists for this member
+        $stmt = $pdo->prepare("
+            SELECT id FROM life_events 
+            WHERE member_id = ? AND emoji = '🎂' AND iddelete = 0 
+            LIMIT 1
+        ");
+        $stmt->execute([$memberId]);
+        $eventId = $stmt->fetchColumn();
+
+        if ($eventId) {
+            // Update existing event
+            $stmt = $pdo->prepare("
+                UPDATE life_events SET 
+                    title = ?,
+                    description = ?,
+                    event_date = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([
+                "{$firstName}'s Birthday",
+                "Celebrating {$firstName}'s Birthday! 🎂",
+                $birthDate,
+                $eventId
+            ]);
+        } else {
+            // Create new event
+            $stmt = $pdo->prepare("
+                INSERT INTO life_events (
+                    member_id,
+                    audience_type,
+                    title,
+                    description,
+                    event_date,
+                    emoji,
+                    iddelete
+                )
+                VALUES (?, ?, ?, ?, ?, ?, 0)
+            ");
+            $stmt->execute([
+                $memberId,
+                'family',
+                "{$firstName}'s Birthday",
+                "Celebrating {$firstName}'s Birthday! 🎂",
+                $birthDate,
+                '🎂'
+            ]);
+            $newEventId = (int)$pdo->lastInsertId();
+
+            // Link event to family
+            $stmt = $pdo->prepare("
+                INSERT INTO life_event_families (event_id, family_id)
+                VALUES (?, ?)
+            ");
+            $stmt->execute([$newEventId, $familyId]);
+        }
+    }
+
     $pdo->commit();
 
     response(true, "Member updated successfully");

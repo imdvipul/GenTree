@@ -20,11 +20,13 @@ if (!$familyId) {
 |--------------------------------------------------------------------------
 */
 $stmt = $pdo->prepare("
-    SELECT id, first_name, last_name, gender, avatar
-    FROM family_members
-    WHERE family_id = ?
-      AND iddelete = 0
+    SELECT fm.*
+    FROM family_members fm
+    JOIN user_member_links uml ON uml.member_id = fm.id
+    WHERE uml.family_id = ?
+      AND fm.iddelete = 0
 ");
+
 $stmt->execute([$familyId]);
 $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -72,7 +74,6 @@ foreach ($relations as $r) {
     }
 
     if ($r['relation_type'] === 'spouse') {
-        // FIX: Only add if not already present (prevents duplicates)
         $personA = $r['person_id'];
         $personB = $r['related_person_id'];
         
@@ -114,13 +115,12 @@ function buildNode($id, $memberMap, $parents, $children, $spouses)
             "ln" => $m['last_name'],
             "label" => trim($m['first_name'] . " " . $m['last_name']),
             "gender" => strtoupper(substr($m['gender'], 0, 1)),
-            "avatar" => $m['avatar'],
+            "avatar" => $m['avatar_url'] ?? $m['avatar'] ?? null,
         ],
         "rels" => [
             "father" => findParentByGender($id, $parents, $memberMap, 'male'),
             "mother" => findParentByGender($id, $parents, $memberMap, 'female'),
-            // "spouses" => array_map(fn($x) => "P$x", $spouses[$id] ?? []),
-            "spouses" => array_unique(array_map(fn($x) => "P$x", $spouses[$id] ?? [])),
+            "spouses" => array_values(array_unique(array_map(fn($x) => "P$x", $spouses[$id] ?? []))),
             "children" => array_map(fn($x) => "P$x", $children[$id] ?? []),
         ],
         "main" => false,

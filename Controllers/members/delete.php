@@ -24,7 +24,7 @@ $stmt = $pdo->prepare("
 $stmt->execute([$familyId, $user['id']]);
 $role = $stmt->fetchColumn();
 
-if (!in_array($role, ['owner', 'admin'])) {
+if (!in_array($role, ['owner', 'editor'])) {
     response(false, "You are not allowed to remove members", null, 403);
 }
 
@@ -63,6 +63,16 @@ try {
             WHERE id = ?
         ")->execute([$memberId]);
     }
+
+    /* ---------- DELETE MEMBER'S BIRTHDAY EVENTS FOR THIS FAMILY ---------- */
+    $stmt = $pdo->prepare("
+        UPDATE life_events 
+        SET iddelete = 1
+        WHERE member_id = ? AND emoji = '🎂' AND id IN (
+            SELECT event_id FROM life_event_families WHERE family_id = ?
+        )
+    ");
+    $stmt->execute([$memberId, $familyId]);
 
     $pdo->commit();
 
