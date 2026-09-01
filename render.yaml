@@ -1,11 +1,8 @@
 services:
   - type: web
     name: gentree-family-api
-    env: php
-    buildCommand: composer install
+    env: docker
     envVars:
-      - key: DOCUMENT_ROOT
-        value: public
       - key: DB_HOST
         value: ""
       - key: DB_DATABASE

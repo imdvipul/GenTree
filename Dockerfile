@@ -1,24 +1,40 @@
 FROM php:8.2-apache
 
-# Enable Apache rewrite
-RUN a2enmod rewrite
+# Install system dependencies and PHP extensions
+RUN apt-get update && apt-get install -y \
+    unzip \
+    git \
+    libzip-dev \
+    && docker-php-ext-install pdo pdo_mysql zip \
+    && a2enmod rewrite \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install PDO + MySQL
-RUN docker-php-ext-install pdo pdo_mysql
+# Point Apache DocumentRoot to /public folder
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Copy project
-COPY . /var/www/html/
+# Configure directory permissions for Apache override (.htaccess)
+RUN echo '<Directory /var/www/html/public>\n\
+    Options Indexes FollowSymLinks\n\
+    AllowOverride All\n\
+    Require all granted\n\
+</Directory>' > /etc/apache2/conf-available/override.conf \
+    && a2enconf override
 
-# Set Apache DocumentRoot to /public
-RUN sed -i 's|/var/www/html|/var/www/html/public|g' \
-    /etc/apache2/sites-available/000-default.conf
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Allow .htaccess overrides
-RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' \
-    /etc/apache2/apache2.conf
+# Set working directory and copy code
+WORKDIR /var/www/html
+COPY . /var/www/html
 
-# Permissions
+# Run composer install
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Set permissions for uploads
 RUN chown -R www-data:www-data /var/www/html
-RUN chmod -R 755 /var/www/html
 
-WORKDIR /var/www/html/public
+EXPOSE 80
+
+CMD ["apache2-foreground"]
