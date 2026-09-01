@@ -7,20 +7,20 @@ services:
       - key: DOCUMENT_ROOT
         value: public
       - key: DB_HOST
-        sync: false
+        value: ""
       - key: DB_DATABASE
-        sync: false
+        value: "family_db"
       - key: DB_USERNAME
-        sync: false
+        value: "root"
       - key: DB_PASSWORD
-        sync: false
+        value: ""
       - key: JWT_SECRET
-        sync: false
+        value: "change-me-jwt-secret"
       - key: FIREBASE_CREDENTIALS
-        sync: false
+        value: ""
       - key: AWS_ACCESS_KEY_ID
-        sync: false
+        value: ""
       - key: AWS_SECRET_ACCESS_KEY
-        sync: false
+        value: ""
       - key: AWS_REGION
         value: ap-south-1
