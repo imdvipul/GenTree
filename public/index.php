@@ -14,6 +14,16 @@ $method = $_SERVER['REQUEST_METHOD'];
 // Remove leading slash
 $uri = trim($uri, '/');
 
+// Root & Health Check Endpoint
+if ($uri === '' || $uri === 'health') {
+    echo json_encode([
+        'status' => true,
+        'message' => 'GenTree Family API is online!',
+        'timestamp' => date('Y-m-d H:i:s')
+    ]);
+    exit;
+}
+
 // ROUTES
 $routes = [
 
@@ -85,6 +95,7 @@ $routes = [
     'GET documents/detail'    => '../Controllers/documents/detail.php',
     'POST documents/delete'   => '../Controllers/documents/delete.php',
     'POST documents/reminder' => '../Controllers/documents/reminders.php',
+    'POST documents/mark-paid' => '../Controllers/documents/mark-paid.php',
 ];
 
 

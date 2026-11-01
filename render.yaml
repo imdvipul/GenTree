@@ -2,22 +2,29 @@ services:
   - type: web
     name: gentree-family-api
     env: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /health
     envVars:
       - key: DB_HOST
-        value: ""
+        value: "" # Fill with your Aiven Host (e.g., mysql-xxxx.aivencloud.com)
+      - key: DB_PORT
+        value: "3306" # Fill with your Aiven Port (e.g., 24351)
       - key: DB_DATABASE
-        value: "family_db"
+        value: "defaultdb"
       - key: DB_USERNAME
-        value: "root"
+        value: "avnadmin"
       - key: DB_PASSWORD
-        value: ""
+        sync: false
+      - key: DB_SSL
+        value: "true"
       - key: JWT_SECRET
-        value: "change-me-jwt-secret"
+        generateValue: true
       - key: FIREBASE_CREDENTIALS
-        value: ""
+        sync: false
       - key: AWS_ACCESS_KEY_ID
-        value: ""
+        sync: false
       - key: AWS_SECRET_ACCESS_KEY
-        value: ""
+        sync: false
       - key: AWS_REGION
         value: ap-south-1

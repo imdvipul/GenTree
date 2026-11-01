@@ -108,6 +108,54 @@ try {
         }
     }
 
+    /* ---------------- NOTIFY AUDIENCE ---------------- */
+    $creatorName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
+    if (empty($creatorName)) $creatorName = "A family member";
+
+    $targetUserIds = [];
+
+    if ($audienceType === 'family' && !empty($familyIds)) {
+        $inFam = implode(',', array_map('intval', $familyIds));
+        $notifUsersStmt = $pdo->prepare("
+            SELECT DISTINCT user_id FROM family_memberships
+            WHERE family_id IN ($inFam) AND user_id != ?
+        ");
+        $notifUsersStmt->execute([$user['id']]);
+        $targetUserIds = $notifUsersStmt->fetchAll(PDO::FETCH_COLUMN);
+    } elseif ($audienceType === 'members' && !empty($memberIds)) {
+        $inMem = implode(',', array_map('intval', $memberIds));
+        $notifUsersStmt = $pdo->prepare("
+            SELECT DISTINCT user_id FROM user_member_links
+            WHERE member_id IN ($inMem) AND user_id != ?
+        ");
+        $notifUsersStmt->execute([$user['id']]);
+        $targetUserIds = $notifUsersStmt->fetchAll(PDO::FETCH_COLUMN);
+    } elseif ($audienceType === 'everyone') {
+        $notifUsersStmt = $pdo->prepare("
+            SELECT DISTINCT fm2.user_id 
+            FROM family_memberships fm1
+            JOIN family_memberships fm2 ON fm2.family_id = fm1.family_id
+            WHERE fm1.user_id = ? AND fm2.user_id != ?
+        ");
+        $notifUsersStmt->execute([$user['id'], $user['id']]);
+        $targetUserIds = $notifUsersStmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    if (!empty($targetUserIds)) {
+        $notifInsert = $pdo->prepare("
+            INSERT INTO notifications (user_id, title, message, type, reference_token, is_read)
+            VALUES (?, ?, ?, 'new_event', ?, 0)
+        ");
+
+        $eventDateStr = !empty($input['event_date']) ? " for " . date("d M Y", strtotime($input['event_date'])) : "";
+        $notifTitle = "🎉 New Event: {$title}";
+        $notifMsg = "{$creatorName} created a new event '{$title}'{$eventDateStr}.";
+
+        foreach ($targetUserIds as $tUserId) {
+            $notifInsert->execute([$tUserId, $notifTitle, $notifMsg, (string)$eventId]);
+        }
+    }
+
     $pdo->commit();
 
     response(true, "Event created successfully", [

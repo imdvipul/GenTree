@@ -138,7 +138,32 @@ try {
             INSERT INTO life_event_families (event_id, family_id)
             VALUES (?, ?)
         ");
-        $stmt->execute([$eventId, $familyId]);
+    /* ---------- 6️⃣ NOTIFY FAMILY MEMBERS ---------- */
+    $creatorName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
+    if (empty($creatorName)) $creatorName = "A family member";
+
+    $famStmt = $pdo->prepare("SELECT name FROM families WHERE id = ?");
+    $famStmt->execute([$familyId]);
+    $familyName = $famStmt->fetchColumn() ?: "Family";
+
+    $notifUsersStmt = $pdo->prepare("
+        SELECT user_id FROM family_memberships
+        WHERE family_id = ? AND user_id != ?
+    ");
+    $notifUsersStmt->execute([$familyId, $user['id']]);
+    $targetUserIds = $notifUsersStmt->fetchAll(PDO::FETCH_COLUMN);
+
+    $notifInsert = $pdo->prepare("
+        INSERT INTO notifications (user_id, title, message, type, reference_token, is_read)
+        VALUES (?, ?, ?, 'new_member', ?, 0)
+    ");
+
+    $newMemberName = trim($first . ' ' . ($input['last_name'] ?? ''));
+    $notifTitle = "👤 New Member Added";
+    $notifMsg = "{$creatorName} added {$newMemberName} to the {$familyName} tree.";
+
+    foreach ($targetUserIds as $tUserId) {
+        $notifInsert->execute([$tUserId, $notifTitle, $notifMsg, (string)$memberId]);
     }
 
     $pdo->commit();

@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     git \
     libzip-dev \
+    ca-certificates \
     && docker-php-ext-install pdo pdo_mysql zip \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
@@ -33,7 +34,7 @@ COPY . /var/www/html
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Set permissions for uploads
-RUN chown -R www-data:www-data /var/www/html
+RUN mkdir -p /var/www/html/public/uploads && chown -R www-data:www-data /var/www/html
 
 EXPOSE 80
 
