@@ -20,11 +20,23 @@ if ($port) {
     $dsn .= ";port=$port";
 }
 
+$multiStatementsAttr = defined('Pdo\Mysql::ATTR_MULTI_STATEMENTS')
+    ? constant('Pdo\Mysql::ATTR_MULTI_STATEMENTS')
+    : (defined('PDO::MYSQL_ATTR_MULTI_STATEMENTS') ? constant('PDO::MYSQL_ATTR_MULTI_STATEMENTS') : 1012);
+
+$sslVerifyAttr = defined('Pdo\Mysql::ATTR_SSL_VERIFY_SERVER_CERT')
+    ? constant('Pdo\Mysql::ATTR_SSL_VERIFY_SERVER_CERT')
+    : (defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT') ? constant('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT') : 1013);
+
+$sslCaAttr = defined('Pdo\Mysql::ATTR_SSL_CA')
+    ? constant('Pdo\Mysql::ATTR_SSL_CA')
+    : (defined('PDO::MYSQL_ATTR_SSL_CA') ? constant('PDO::MYSQL_ATTR_SSL_CA') : 1008);
+
 $options = [
     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     PDO::ATTR_EMULATE_PREPARES   => false,
-    PDO::MYSQL_ATTR_MULTI_STATEMENTS => true,
+    $multiStatementsAttr         => true,
 ];
 
 // Determine if SSL is required (Aiven, cloud databases, or explicit DB_SSL=true)
@@ -34,12 +46,12 @@ $useSsl = ($dbSsl !== false && filter_var($dbSsl, FILTER_VALIDATE_BOOLEAN)) || (
 
 if ($useSsl) {
     // Aiven and cloud databases mandate SSL transport
-    $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+    $options[$sslVerifyAttr] = false;
     $sslCa = getenv('DB_SSL_CA');
     if ($sslCa && file_exists($sslCa)) {
-        $options[PDO::MYSQL_ATTR_SSL_CA] = $sslCa;
+        $options[$sslCaAttr] = $sslCa;
     } elseif (file_exists('/etc/ssl/certs/ca-certificates.crt')) {
-        $options[PDO::MYSQL_ATTR_SSL_CA] = '/etc/ssl/certs/ca-certificates.crt';
+        $options[$sslCaAttr] = '/etc/ssl/certs/ca-certificates.crt';
     }
 }
 

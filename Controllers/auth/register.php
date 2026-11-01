@@ -47,14 +47,19 @@ if (!$created) {
 $userId = $pdo->lastInsertId();
 
 // Create Firebase custom token so user can sign in to Firestore/chat immediately
-$auth = firebaseAuth();
-
-$customToken = $auth->createCustomToken((string)$userId, [
-    'email'     => $email,
-    'family_id' => $familyId,
-]);
-
-$firebaseToken = $customToken->toString();
+$firebaseToken = null;
+try {
+    $auth = firebaseAuth();
+    if ($auth) {
+        $customToken = $auth->createCustomToken((string)$userId, [
+            'email'     => $email,
+            'family_id' => $familyId,
+        ]);
+        $firebaseToken = $customToken->toString();
+    }
+} catch (\Throwable $e) {
+    error_log('Firebase register token failed: ' . $e->getMessage());
+}
 
 response(true, "Registered successfully", [
     "firebase_token" => $firebaseToken,

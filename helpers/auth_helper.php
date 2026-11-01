@@ -1,4 +1,3 @@
-
 <?php
 // require_once __DIR__ . "/jwt_helper.php";
 $jwtHelper = __DIR__ . "/jwt_helper.php";

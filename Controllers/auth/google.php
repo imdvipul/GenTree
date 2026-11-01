@@ -96,12 +96,19 @@ $token = generateJWT([
 ]);
 
 // Create Firebase custom token for chat (Firestore)
-$auth = firebaseAuth();
-$firebaseToken = $auth->createCustomToken((string)$user['id'], [
-    'email'     => $user['email'],
-    'family_id' => $user['family_id'],
-    'role'      => $user['role'] ?? 'member'
-])->toString();
+$firebaseToken = null;
+try {
+    $auth = firebaseAuth();
+    if ($auth) {
+        $firebaseToken = $auth->createCustomToken((string)$user['id'], [
+            'email'     => $user['email'],
+            'family_id' => $user['family_id'],
+            'role'      => $user['role'] ?? 'member'
+        ])->toString();
+    }
+} catch (\Throwable $e) {
+    error_log('Firebase google token failed: ' . $e->getMessage());
+}
 
 response(true, "Google login successful", [
     "token"          => $token,

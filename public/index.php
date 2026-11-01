@@ -1,11 +1,25 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+ob_start();
+
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
+
+set_exception_handler(function (\Throwable $e) {
+    if (ob_get_length()) {
+        ob_clean();
+    }
+    http_response_code(500);
+    header("Content-Type: application/json");
+    echo json_encode([
+        "status"  => false,
+        "message" => "Server error: " . $e->getMessage()
+    ]);
+    exit;
+});
 
 header("Content-Type: application/json");
 date_default_timezone_set('Asia/Kolkata');
-
 
 // Get requested path
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -59,28 +73,32 @@ $routes = [
     'POST members/removefromfamily' => '../Controllers/members/removefromfamily.php',
     'POST members/upload-avatar' => '../Controllers/members/upload-avatar.php',
 
-    // THOUGHTFUL
-    'POST thoughtful/create' => '../Controllers/thoughtful/create.php',
-    'GET thoughtful/list'     => '../Controllers/thoughtful/list.php',
-    'POST thoughtful/update'   => '../Controllers/thoughtful/update.php',
-    'POST thoughtful/toggle_like'        => '../Controllers/thoughtful/toggle_like.php',
-    'POST thoughtful/upload'   => '../Controllers/thoughtful/upload.php',
+    // RELATIONSHIPS
+    'POST relationships/create' => '../Controllers/relationships/create.php',
+    'POST relationships/delete' => '../Controllers/relationships/delete.php',
+    'POST relationships/list'   => '../Controllers/relationships/list.php',
 
-    // LIFE EVENTS
-    'POST events/create' => '../Controllers/events/create.php',
-    'POST events/update' => '../Controllers/events/update.php',
-    'POST events/delete' => '../Controllers/events/delete.php',
-    'POST events/list'   => '../Controllers/events/list.php',
-    'POST events/detail'   => '../Controllers/events/detail.php',
+    // THOUGHTFUL (HOME SCREEN DAILY CAROUSEL)
+    'GET thoughtful/daily'   => '../Controllers/thoughtful/daily.php',
+    'POST thoughtful/create' => '../Controllers/thoughtful/create.php',
+    'POST thoughtful/like'   => '../Controllers/thoughtful/like.php',
+
+    // LIFE EVENTS (BIRTHDAYS, ANNIVERSARIES)
+    'POST events/create'       => '../Controllers/events/create.php',
+    'POST events/list'         => '../Controllers/events/list.php',
+    'POST events/detail'       => '../Controllers/events/detail.php',
+    'POST events/update'       => '../Controllers/events/update.php',
+    'POST events/delete'       => '../Controllers/events/delete.php',
     'POST events/upload_image' => '../Controllers/events/upload_image.php',
 
     // NOTIFICATION
-    'GET notifications/list'   => '../Controllers/notifications/list.php',
+    'GET notifications/list'        => '../Controllers/notifications/list.php',
+    'POST notifications/mark-read'  => '../Controllers/notifications/mark-read.php',
 
     // Chat
     'GET Chat/get_contacts'   => '../Controllers/Chat/get_contacts.php',
-    'POST Chat/create_or_get'   => '../Controllers/Chat/create_or_get.php',
-    'GET Chat/list'   => '../Controllers/Chat/list.php',
+    'POST Chat/create_or_get' => '../Controllers/Chat/create_or_get.php',
+    'GET Chat/list'           => '../Controllers/Chat/list.php',
 
     // SOCIETY notice board and suvichar
     'GET society/suvichar'       => '../Controllers/society/daily_suvichar.php',
@@ -88,17 +106,15 @@ $routes = [
     'GET society/notices/detail' => '../Controllers/society/notice_detail.php',
 
     // SMART DOCUMENT INTELLIGENCE
-    'POST documents/upload'   => '../Controllers/documents/upload.php',
-    'POST documents/analyze'  => '../Controllers/documents/analyze.php',
-    'POST documents/save'     => '../Controllers/documents/save.php',
-    'GET documents/list'      => '../Controllers/documents/list.php',
-    'GET documents/detail'    => '../Controllers/documents/detail.php',
-    'POST documents/delete'   => '../Controllers/documents/delete.php',
-    'POST documents/reminder' => '../Controllers/documents/reminders.php',
+    'POST documents/upload'    => '../Controllers/documents/upload.php',
+    'POST documents/analyze'   => '../Controllers/documents/analyze.php',
+    'POST documents/save'      => '../Controllers/documents/save.php',
+    'GET documents/list'       => '../Controllers/documents/list.php',
+    'GET documents/detail'     => '../Controllers/documents/detail.php',
+    'POST documents/delete'    => '../Controllers/documents/delete.php',
+    'POST documents/reminder'  => '../Controllers/documents/reminders.php',
     'POST documents/mark-paid' => '../Controllers/documents/mark-paid.php',
 ];
-
-
 
 // Create route key
 $routeKey = $method . ' ' . $uri;
@@ -113,4 +129,8 @@ if (!isset($routes[$routeKey])) {
 }
 
 // Load matched file
-require_once $routes[$routeKey];
+$targetPath = $routes[$routeKey];
+if (!str_starts_with($targetPath, '/')) {
+    $targetPath = __DIR__ . '/' . $targetPath;
+}
+require_once $targetPath;

@@ -11,9 +11,19 @@ function firebaseAuth() {
         }
     } else {
         $serviceAccount = __DIR__ . '/firebase-admin.json';
+        if (!file_exists($serviceAccount)) {
+            $serviceAccount = __DIR__ . '/firebase_service_account.json';
+        }
+        if (!file_exists($serviceAccount)) {
+            return null;
+        }
     }
 
-    $factory = (new Factory)->withServiceAccount($serviceAccount);
-
-    return $factory->createAuth();
+    try {
+        $factory = (new Factory)->withServiceAccount($serviceAccount);
+        return $factory->createAuth();
+    } catch (\Throwable $e) {
+        error_log("Firebase Auth init error: " . $e->getMessage());
+        return null;
+    }
 }
