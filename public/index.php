@@ -45,6 +45,7 @@ $routes = [
     'POST auth/login'    => '../Controllers/auth/login.php',
     'POST auth/register' => '../Controllers/auth/register.php',
     'POST auth/google'   => '../Controllers/auth/google.php',
+    'POST auth/phone'    => '../Controllers/auth/phone.php',
 
     // USER
     'GET user/profile'   => '../Controllers/user/profile.php',
