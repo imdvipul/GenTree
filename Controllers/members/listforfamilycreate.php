@@ -16,6 +16,8 @@ $userId = (int)$user['id'];
 $sql = "
 SELECT DISTINCT
     fm.id,
+    fm.first_name,
+    fm.last_name,
     CONCAT(TRIM(fm.first_name), ' ', TRIM(fm.last_name)) AS full_name,
     fm.gender
 FROM family_members fm
@@ -43,5 +45,3 @@ $stmt->execute([
 $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 response(true, "Members fetched successfully", $members);
-
-
