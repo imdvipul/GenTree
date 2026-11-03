@@ -4,6 +4,7 @@ header("Content-Type: application/json");
 require_once __DIR__ . "/../../config/database.php";
 require_once __DIR__ . "/../../helpers/response.php";
 require_once __DIR__ . "/../../helpers/auth_helper.php";
+require_once __DIR__ . "/../../helpers/fcm_helper.php";
 
 $user = getAuthUser();
 
@@ -75,6 +76,41 @@ $stmt->execute([
     $id,
     $user['id']
 ]);
+
+/* ================= NOTIFY OTHER FAMILY MEMBERS ================= */
+$updaterName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
+if (empty($updaterName)) $updaterName = "A family member";
+
+$notifUsersStmt = $pdo->prepare("
+    SELECT user_id FROM family_memberships
+    WHERE family_id = ? AND user_id != ?
+");
+$notifUsersStmt->execute([$id, $user['id']]);
+$targetUserIds = $notifUsersStmt->fetchAll(PDO::FETCH_COLUMN);
+
+$notifTitle = "🏡 Family Updated";
+$notifMsg   = "{$updaterName} updated {$name}'s info.";
+
+if (!empty($targetUserIds)) {
+    $notifInsert = $pdo->prepare("
+        INSERT INTO notifications (user_id, title, message, type, reference_token, is_read, created_at)
+        VALUES (?, ?, ?, 'family_update', ?, 0, NOW())
+    ");
+    foreach ($targetUserIds as $tUserId) {
+        $notifInsert->execute([$tUserId, $notifTitle, $notifMsg, (string)$id]);
+    }
+
+    try {
+        sendFcmNotification($targetUserIds, $notifTitle, $notifMsg, [
+            'type'            => 'family_update',
+            'family_id'       => (string)$id,
+            'family_name'     => $name,
+            'reference_token' => (string)$id,
+        ]);
+    } catch (Throwable $pe) {
+        error_log("[Push Error] " . $pe->getMessage());
+    }
+}
 
 response(true, "Family updated successfully", [
     "cover_image" => $coverPath

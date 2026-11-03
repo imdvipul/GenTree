@@ -4,6 +4,7 @@ header("Content-Type: application/json");
 require_once __DIR__ . "/../../config/database.php";
 require_once __DIR__ . "/../../helpers/auth_helper.php";
 require_once __DIR__ . "/../../helpers/response.php";
+require_once __DIR__ . "/../../helpers/fcm_helper.php";
 
 $user = getAuthUser();
 if (!$user || !isset($user['id'])) {
@@ -63,12 +64,19 @@ try {
         if (!$checkNotifStmt->fetch()) {
             $emoji = $ev['emoji'] ?: '🎉';
             $loc = $ev['location'] ? " at " . $ev['location'] : "";
+            $notifTitle = "{$emoji} Today's Event: " . $ev['title'];
+            $notifMsg = "Today is '" . $ev['title'] . "'{$loc}. Tap to view details.";
             $insertNotifStmt->execute([
                 $userId,
-                "{$emoji} Today's Event: " . $ev['title'],
-                "Today is '" . $ev['title'] . "'{$loc}. Tap to view details.",
+                $notifTitle,
+                $notifMsg,
                 'event_today',
                 (string)$ev['id']
+            ]);
+            sendFcmNotification([$userId], $notifTitle, $notifMsg, [
+                'type' => 'event_today',
+                'event_id' => (string)$ev['id'],
+                'reference_token' => (string)$ev['id']
             ]);
         }
     }
@@ -94,12 +102,19 @@ try {
         $checkUpcomingNotifStmt->execute([$userId, (string)$ev['id']]);
         if (!$checkUpcomingNotifStmt->fetch()) {
             $formattedDate = date("d M Y", strtotime($ev['event_date']));
+            $notifTitle = "🗓 Upcoming Event: " . $ev['title'];
+            $notifMsg = "'" . $ev['title'] . "' is coming up on {$formattedDate}.";
             $insertNotifStmt->execute([
                 $userId,
-                "🗓 Upcoming Event: " . $ev['title'],
-                "'" . $ev['title'] . "' is coming up on {$formattedDate}.",
+                $notifTitle,
+                $notifMsg,
                 'event_reminder',
                 (string)$ev['id']
+            ]);
+            sendFcmNotification([$userId], $notifTitle, $notifMsg, [
+                'type' => 'event_reminder',
+                'event_id' => (string)$ev['id'],
+                'reference_token' => (string)$ev['id']
             ]);
         }
     }
@@ -123,12 +138,19 @@ try {
             $checkNotifStmt->execute([$userId, 'event_today', $refToken]);
             if (!$checkNotifStmt->fetch()) {
                 $fullName = trim($bdayMember['first_name'] . ' ' . ($bdayMember['last_name'] ?? ''));
+                $notifTitle = "🎂 Today is {$bdayMember['first_name']}'s Birthday!";
+                $notifMsg = "Wish {$fullName} a wonderful birthday today! 🎉";
                 $insertNotifStmt->execute([
                     $userId,
-                    "🎂 Today is {$bdayMember['first_name']}'s Birthday!",
-                    "Wish {$fullName} a wonderful birthday today! 🎉",
+                    $notifTitle,
+                    $notifMsg,
                     'event_today',
                     $refToken
+                ]);
+                sendFcmNotification([$userId], $notifTitle, $notifMsg, [
+                    'type' => 'event_today',
+                    'reference_token' => $refToken,
+                    'member_id' => (string)$bdayMember['id']
                 ]);
             }
         }

@@ -4,6 +4,7 @@ header("Content-Type: application/json");
 require_once __DIR__ . "/../../config/database.php";
 require_once __DIR__ . "/../../helpers/response.php";
 require_once __DIR__ . "/../../helpers/auth_helper.php";
+require_once __DIR__ . "/../../helpers/fcm_helper.php";
 
 $user = getAuthUser();
 $input = json_decode(file_get_contents("php://input"), true);
@@ -164,7 +165,50 @@ try {
         }
     }
 
+    /* ---------- NOTIFY OTHER FAMILY MEMBERS ---------- */
+    $updaterName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
+    if (empty($updaterName)) $updaterName = "A family member";
+
+    $famStmt = $pdo->prepare("SELECT name FROM families WHERE id = ?");
+    $famStmt->execute([$familyId]);
+    $familyName = $famStmt->fetchColumn() ?: "Family";
+
+    $notifUsersStmt = $pdo->prepare("
+        SELECT user_id FROM family_memberships
+        WHERE family_id = ? AND user_id != ?
+    ");
+    $notifUsersStmt->execute([$familyId, $user['id']]);
+    $targetUserIds = $notifUsersStmt->fetchAll(PDO::FETCH_COLUMN);
+
+    $updatedMemberName = trim(($input['first_name'] ?? '') . ' ' . ($input['last_name'] ?? ''));
+    $notifTitle = "🌳 Member Updated";
+    $notifMsg   = "{$updaterName} updated {$updatedMemberName}'s details in the {$familyName} tree.";
+
+    if (!empty($targetUserIds)) {
+        $notifInsert = $pdo->prepare("
+            INSERT INTO notifications (user_id, title, message, type, reference_token, is_read, created_at)
+            VALUES (?, ?, ?, 'member_updated', ?, 0, NOW())
+        ");
+        foreach ($targetUserIds as $tUserId) {
+            $notifInsert->execute([$tUserId, $notifTitle, $notifMsg, (string)$memberId]);
+        }
+    }
+
     $pdo->commit();
+
+    if (!empty($targetUserIds)) {
+        try {
+            sendFcmNotification($targetUserIds, $notifTitle, $notifMsg, [
+                'type'            => 'member_updated',
+                'member_id'       => (string)$memberId,
+                'family_id'       => (string)$familyId,
+                'family_name'     => $familyName,
+                'reference_token' => (string)$memberId,
+            ]);
+        } catch (Throwable $pe) {
+            error_log("[Push Error] " . $pe->getMessage());
+        }
+    }
 
     response(true, "Member updated successfully");
 

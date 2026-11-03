@@ -4,6 +4,7 @@ header("Content-Type: application/json");
 require_once __DIR__ . "/../../config/database.php";
 require_once __DIR__ . "/../../helpers/auth_helper.php";
 require_once __DIR__ . "/../../helpers/response.php";
+require_once __DIR__ . "/../../helpers/fcm_helper.php";
 
 $user = getAuthUser();
 if (!$user || empty($user['id'])) {
@@ -157,6 +158,18 @@ try {
     }
 
     $pdo->commit();
+
+    if (!empty($targetUserIds)) {
+        try {
+            sendFcmNotification($targetUserIds, $notifTitle, $notifMsg, [
+                'type'            => 'new_event',
+                'event_id'        => (string)$eventId,
+                'reference_token' => (string)$eventId,
+            ]);
+        } catch (Throwable $pe) {
+            error_log("[Push Error] " . $pe->getMessage());
+        }
+    }
 
     response(true, "Event created successfully", [
         "event_id" => $eventId

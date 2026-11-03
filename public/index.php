@@ -93,13 +93,17 @@ $routes = [
     'POST events/upload_image' => '../Controllers/events/upload_image.php',
 
     // NOTIFICATION
-    'GET notifications/list'        => '../Controllers/notifications/list.php',
-    'POST notifications/mark-read'  => '../Controllers/notifications/mark-read.php',
+    'GET notifications/list'             => '../Controllers/notifications/list.php',
+    'POST notifications/mark-read'       => '../Controllers/notifications/mark-read.php',
+    'GET notifications/send_reminders'   => '../Controllers/notifications/send_reminders.php',
+    'POST notifications/send_reminders'  => '../Controllers/notifications/send_reminders.php',
 
     // Chat
     'GET Chat/get_contacts'   => '../Controllers/Chat/get_contacts.php',
     'POST Chat/create_or_get' => '../Controllers/Chat/create_or_get.php',
     'GET Chat/list'           => '../Controllers/Chat/list.php',
+    'POST chat/notify'        => '../Controllers/chat/notify.php',
+    'POST Chat/notify'        => '../Controllers/chat/notify.php',
 
     // SOCIETY notice board and suvichar
     'GET society/suvichar'       => '../Controllers/society/daily_suvichar.php',
