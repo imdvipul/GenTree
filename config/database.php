@@ -57,6 +57,8 @@ if ($useSsl) {
 
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
+    // Align database session timezone with Asia/Kolkata (+05:30)
+    $pdo->exec("SET time_zone = '+05:30'");
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode([

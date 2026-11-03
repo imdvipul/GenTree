@@ -13,6 +13,21 @@ if (!$user || !isset($user['id'])) {
 $input = json_decode(file_get_contents("php://input"), true);
 $id = $input['notification_id'] ?? null;
 $markAll = !empty($input['mark_all']);
+$isDelete = !empty($input['delete']);
+
+if ($isDelete) {
+    if ($markAll) {
+        $stmt = $pdo->prepare("DELETE FROM notifications WHERE user_id = ?");
+        $stmt->execute([$user['id']]);
+        response(true, "All notifications cleared");
+    } else if ($id) {
+        $stmt = $pdo->prepare("DELETE FROM notifications WHERE id = ? AND user_id = ?");
+        $stmt->execute([$id, $user['id']]);
+        response(true, "Notification deleted");
+    } else {
+        response(false, "Notification id required for deletion");
+    }
+}
 
 if ($markAll) {
     $stmt = $pdo->prepare("
@@ -37,4 +52,3 @@ $stmt = $pdo->prepare("
 $stmt->execute([$id, $user['id']]);
 
 response(true, "Notification marked as read");
-

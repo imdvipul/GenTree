@@ -215,7 +215,10 @@ try {
 
 // ── 5. Fetch Final Notifications List ────────────────────────────────────────
 $stmt = $pdo->prepare("
-    SELECT id, title, message, type, is_read, reference_token, created_at
+    SELECT id, title, message, type, is_read, reference_token, 
+           created_at,
+           UNIX_TIMESTAMP(created_at) as timestamp,
+           DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%s+05:30') as created_at_iso
     FROM notifications
     WHERE user_id = ?
     ORDER BY created_at DESC
