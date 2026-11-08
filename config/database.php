@@ -63,6 +63,7 @@ try {
     // Ensure database schema migrations are applied
     require_once __DIR__ . "/../helpers/schema_helper.php";
     ensureDailySuvicharSchema($pdo);
+    ensureSmartDocumentsSchema($pdo);
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode([
