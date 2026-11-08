@@ -59,6 +59,10 @@ try {
     $pdo = new PDO($dsn, $user, $pass, $options);
     // Align database session timezone with Asia/Kolkata (+05:30)
     $pdo->exec("SET time_zone = '+05:30'");
+
+    // Ensure database schema migrations are applied
+    require_once __DIR__ . "/../helpers/schema_helper.php";
+    ensureDailySuvicharSchema($pdo);
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode([

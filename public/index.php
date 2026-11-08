@@ -105,6 +105,9 @@ $routes = [
     'POST chat/notify'        => '../Controllers/chat/notify.php',
     'POST Chat/notify'        => '../Controllers/chat/notify.php',
 
+    // SYSTEM / SCHEMA MIGRATION
+    'GET migrate-schema'            => '../Controllers/system/migrate.php',
+
     // SOCIETY notice board and suvichar
     'GET society/suvichar'          => '../Controllers/society/daily_suvichar.php',
     'GET society/suvichars'         => '../Controllers/society/suvichar_list.php',

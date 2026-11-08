@@ -96,5 +96,46 @@ try {
 
 } catch (Throwable $e) {
     error_log("[Suvichar Create Error] " . $e->getMessage());
+
+    // If a column is missing, run auto-migration and retry once
+    if (str_contains($e->getMessage(), 'user_id') || str_contains($e->getMessage(), '1054') || str_contains($e->getMessage(), 'Unknown column')) {
+        try {
+            require_once __DIR__ . "/../../helpers/schema_helper.php";
+            ensureDailySuvicharSchema($pdo, true);
+
+            $stmt = $pdo->prepare("
+                INSERT INTO daily_suvichars 
+                (title, thought, author, user_id, family_id, language, category, is_user_submitted, is_active, is_delete, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, 0, NOW())
+            ");
+            $stmt->execute([
+                $title,
+                $thought,
+                $author,
+                $userId,
+                $userFamilyId,
+                $language,
+                $category
+            ]);
+
+            $newId = (int)$pdo->lastInsertId();
+
+            response(true, "Good thought posted successfully", [
+                "id" => $newId,
+                "thought" => $thought,
+                "author" => $author,
+                "category" => $category,
+                "user_full_name" => $userFullName,
+                "user_avatar" => $user['avatar'] ?? null,
+                "is_user_submitted" => 1
+            ]);
+            exit;
+        } catch (Throwable $retryEx) {
+            error_log("[Suvichar Create Retry Failed] " . $retryEx->getMessage());
+            response(false, "Failed to create thought: " . $retryEx->getMessage(), null, 500);
+            exit;
+        }
+    }
+
     response(false, "Failed to create thought: " . $e->getMessage(), null, 500);
 }
