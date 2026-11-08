@@ -106,9 +106,13 @@ $routes = [
     'POST Chat/notify'        => '../Controllers/chat/notify.php',
 
     // SOCIETY notice board and suvichar
-    'GET society/suvichar'       => '../Controllers/society/daily_suvichar.php',
-    'GET society/notices'        => '../Controllers/society/notices_list.php',
-    'GET society/notices/detail' => '../Controllers/society/notice_detail.php',
+    'GET society/suvichar'          => '../Controllers/society/daily_suvichar.php',
+    'GET society/suvichars'         => '../Controllers/society/suvichar_list.php',
+    'POST society/suvichar/create'  => '../Controllers/society/suvichar_create.php',
+    'POST society/suvichar/update'  => '../Controllers/society/suvichar_update.php',
+    'POST society/suvichar/delete'  => '../Controllers/society/suvichar_delete.php',
+    'GET society/notices'           => '../Controllers/society/notices_list.php',
+    'GET society/notices/detail'    => '../Controllers/society/notice_detail.php',
 
     // SMART DOCUMENT INTELLIGENCE
     'POST documents/upload'    => '../Controllers/documents/upload.php',
